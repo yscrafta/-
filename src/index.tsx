@@ -144,7 +144,8 @@ app.post('/api/process', async (c) => {
       // 施設フィルター（"全施設"の場合はフィルタリングしない）
       if (facility && facility !== '全施設') {
         const rowFacility = row['物件名']?.trim()
-        if (rowFacility !== facility) return false
+        const selectedFacility = facility.trim()
+        if (rowFacility !== selectedFacility) return false
       }
       
       const checkin = row['チェックイン']
@@ -156,6 +157,24 @@ app.post('/api/process', async (c) => {
                date.getMonth() + 1 === parseInt(month)
       } catch {
         return false
+      }
+    })
+    
+    // チェックアウト日の順に並び替え
+    filteredBookings.sort((a, b) => {
+      const checkoutA = a['チェックアウト']
+      const checkoutB = b['チェックアウト']
+      
+      if (!checkoutA && !checkoutB) return 0
+      if (!checkoutA) return 1
+      if (!checkoutB) return -1
+      
+      try {
+        const dateA = new Date(checkoutA)
+        const dateB = new Date(checkoutB)
+        return dateA.getTime() - dateB.getTime()
+      } catch {
+        return 0
       }
     })
     
