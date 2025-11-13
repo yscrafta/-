@@ -52,41 +52,124 @@ const channelMapping: Record<string, string> = {
   '一休.com': '一休',
   'konjakuso': '自社サイト',
   '楽天トラベル': '楽天',
-  'じゃらん': 'じゃらん'
+  'Rakuten Oyado（旧 Vacation Stay：楽天）': '楽天',
+  'じゃらん': 'じゃらん',
+  'Expedia': 'Expedia',
+  'Hotels.com': 'Hotels.com',
+  'Agoda': 'Agoda',
+  'Trip.com': 'Trip',
+  '手動作成': 'Marriott',
+  'other': 'その他'
 }
 
-// 言語判定
+// 言語判定（国籍から第一言語を推測）
 function getLanguage(nationality: string): string {
-  if (nationality === 'Japan') return '日本語'
-  if (nationality === 'United States of America') return '英語'
-  if (['China', 'Taiwan', 'Hong Kong'].includes(nationality)) return '中国語'
-  if (['Switzerland', 'Germany', 'Austria'].includes(nationality)) return 'ドイツ語'
-  if (nationality === 'France') return 'フランス語'
-  if (nationality === 'Spain') return 'スペイン語'
-  if (nationality === 'Korea') return '韓国語'
-  if (['Singapore', 'Malaysia'].includes(nationality)) return '英語'
-  return ''
+  // 国籍の正規化
+  const normalized = nationality.trim()
+  
+  // 日本
+  if (normalized === 'Japan') return '日本語'
+  
+  // 英語圏
+  if ([
+    'United States of America',
+    'United Kingdom of Great Britain and Northern Ireland',
+    'United Kingdom',
+    'Canada',
+    'Australia',
+    'Singapore',
+    'India',
+    'United Arab Emirates',
+    'Saudi Arabia'
+  ].includes(normalized)) return '英語'
+  
+  // 中国語圏
+  if ([
+    'China',
+    'Taiwan',
+    'Hong Kong',
+    'Hong Kong SAR, China'
+  ].includes(normalized)) return '中国語'
+  
+  // ドイツ語圏
+  if ([
+    'Switzerland',
+    'Germany',
+    'Austria'
+  ].includes(normalized)) return 'ドイツ語'
+  
+  // フランス語圏
+  if (normalized === 'France') return 'フランス語'
+  
+  // スペイン語圏
+  if ([
+    'Spain',
+    'Mexico'
+  ].includes(normalized)) return 'スペイン語'
+  
+  // 韓国語
+  if ([
+    'Korea',
+    'Korea (Republic of)'
+  ].includes(normalized)) return '韓国語'
+  
+  // マレー語
+  if (normalized === 'Malaysia') return 'マレー語'
+  
+  // タイ語
+  if (normalized === 'Thailand') return 'タイ語'
+  
+  // イタリア語
+  if (normalized === 'Italy') return 'イタリア語'
+  
+  // ポーランド語
+  if (normalized === 'Poland') return 'ポーランド語'
+  
+  // ロシア語
+  if (normalized === 'Russian Federation') return 'ロシア語'
+  
+  // アラビア語（サウジアラビアとUAEは英語の方が一般的だが、第一言語はアラビア語）
+  // ただし上記で英語圏として処理済み
+  
+  // 該当なし（空文字列ではなく「その他」を返す）
+  return 'その他'
 }
 
-// 国名日本語変換
+// 国名日本語変換（統一された表現）
 function getCountryJP(nationality: string): string {
+  // 国籍の正規化
+  const normalized = nationality.trim()
+  
   const countryMap: Record<string, string> = {
     'Japan': '日本',
     'United States of America': 'アメリカ',
+    'United Kingdom of Great Britain and Northern Ireland': 'イギリス',
+    'United Kingdom': 'イギリス',
     'Switzerland': 'スイス',
     'Germany': 'ドイツ',
+    'Austria': 'オーストリア',
     'China': '中国',
     'Taiwan': '台湾',
     'Hong Kong': '香港',
+    'Hong Kong SAR, China': '香港',
     'Korea': '韓国',
+    'Korea (Republic of)': '韓国',
     'France': 'フランス',
     'Spain': 'スペイン',
+    'Mexico': 'メキシコ',
     'Singapore': 'シンガポール',
     'Malaysia': 'マレーシア',
-    'United Kingdom': 'イギリス',
-    'Australia': 'オーストラリア'
+    'Thailand': 'タイ',
+    'Australia': 'オーストラリア',
+    'Canada': 'カナダ',
+    'India': 'インド',
+    'Italy': 'イタリア',
+    'Poland': 'ポーランド',
+    'Russian Federation': 'ロシア',
+    'United Arab Emirates': 'UAE',
+    'Saudi Arabia': 'サウジアラビア'
   }
-  return countryMap[nationality] || nationality
+  return countryMap[normalized] || normalized
 }
 
 // 施設名を取得
@@ -140,6 +223,12 @@ app.post('/api/process', async (c) => {
     // 指定月と施設のデータをフィルタリング
     const filteredBookings = bookings.filter(row => {
       if (row['状態'] === 'システムキャンセル') return false
+      
+      // 売上、OTAサービス料、受取金が全て0円の場合は除外
+      const sales = parseFloat(row['販売']) || 0
+      const otaFee = parseFloat(row['OTA サービス料']) || 0
+      const received = parseFloat(row['受取金']) || 0
+      if (sales === 0 && otaFee === 0 && received === 0) return false
       
       // 施設フィルター（"全施設"の場合はフィルタリングしない）
       if (facility && facility !== '全施設') {
