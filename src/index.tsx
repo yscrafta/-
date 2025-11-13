@@ -89,13 +89,11 @@ function getCountryJP(nationality: string): string {
   return countryMap[nationality] || nationality
 }
 
-// API: CSV処理とExcel生成
-app.post('/api/process', async (c) => {
+// 施設名を取得
+app.post('/api/facilities', async (c) => {
   try {
     const formData = await c.req.formData()
     const file = formData.get('csv') as File
-    const year = formData.get('year') as string
-    const month = formData.get('month') as string
     
     if (!file) {
       return c.json({ error: 'CSVファイルがありません' }, 400)
@@ -105,9 +103,49 @@ app.post('/api/process', async (c) => {
     const csvText = await file.text()
     const bookings = parseCSV(csvText)
     
-    // 指定月のデータをフィルタリング
+    // 施設名を抽出
+    const facilities = new Set<string>()
+    bookings.forEach(row => {
+      const facility = row['物件名']
+      if (facility && facility.trim()) {
+        facilities.add(facility.trim())
+      }
+    })
+    
+    return c.json({ facilities: Array.from(facilities).sort() })
+    
+  } catch (error: any) {
+    console.error('Error:', error)
+    return c.json({ error: error.message }, 500)
+  }
+})
+
+// API: CSV処理とExcel生成
+app.post('/api/process', async (c) => {
+  try {
+    const formData = await c.req.formData()
+    const file = formData.get('csv') as File
+    const year = formData.get('year') as string
+    const month = formData.get('month') as string
+    const facility = formData.get('facility') as string
+    
+    if (!file) {
+      return c.json({ error: 'CSVファイルがありません' }, 400)
+    }
+    
+    // CSVを読み込む
+    const csvText = await file.text()
+    const bookings = parseCSV(csvText)
+    
+    // 指定月と施設のデータをフィルタリング
     const filteredBookings = bookings.filter(row => {
       if (row['状態'] === 'システムキャンセル') return false
+      
+      // 施設フィルター（"全施設"の場合はフィルタリングしない）
+      if (facility && facility !== '全施設') {
+        const rowFacility = row['物件名']?.trim()
+        if (rowFacility !== facility) return false
+      }
       
       const checkin = row['チェックイン']
       if (!checkin) return false
@@ -121,9 +159,16 @@ app.post('/api/process', async (c) => {
       }
     })
     
+    // 施設名を短縮（シート名が31文字を超えないように）
+    let sheetName = `${year}年${month}月`
+    if (facility && facility !== '全施設') {
+      const shortFacility = facility.length > 20 ? facility.substring(0, 20) + '...' : facility
+      sheetName = `${year}年${month}月_${shortFacility}`.substring(0, 31)
+    }
+    
     // Excelワークブックを作成
     const workbook = new ExcelJS.Workbook()
-    const worksheet = workbook.addWorksheet(`${year}年${month}月`)
+    const worksheet = workbook.addWorksheet(sheetName)
     
     // 列幅を設定
     worksheet.columns = [
@@ -163,7 +208,7 @@ app.post('/api/process', async (c) => {
     dateCell.alignment = { horizontal: 'right', vertical: 'middle' }
     
     const propertyCell = worksheet.getCell('G3')
-    propertyCell.value = '今昔荘　弁天町　大阪ベイ'
+    propertyCell.value = facility && facility !== '全施設' ? facility : '今昔荘（全施設）'
     propertyCell.font = { size: 12, bold: true }
     propertyCell.alignment = { vertical: 'middle' }
     
@@ -398,10 +443,21 @@ app.post('/api/process', async (c) => {
     // Excelファイルを生成
     const buffer = await workbook.xlsx.writeBuffer()
     
+    // ファイル名を生成
+    let filename = `売上計算書_${year}年${month}月`
+    if (facility && facility !== '全施設') {
+      // ファイル名に使用できない文字を置換
+      const safeFacility = facility.replace(/[<>:"/\\|?*]/g, '_')
+      filename += `_${safeFacility}`
+    } else {
+      filename += '_全施設'
+    }
+    filename += '.xlsx'
+    
     return new Response(buffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="売上計算書_${year}年${month}月.xlsx"`
+        'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
       }
     })
     
@@ -447,6 +503,19 @@ app.get('/', (c) => {
                                    class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-indigo-500 p-2.5">
                         </div>
                         <p class="mt-1 text-sm text-gray-500">AirHostからエクスポートしたCSVファイルを選択してください</p>
+                    </div>
+
+                    <!-- 施設選択 -->
+                    <div id="facilitySelectContainer" class="hidden">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-building mr-2"></i>施設
+                        </label>
+                        <select id="facility" name="facility" required
+                                class="block w-full px-4 py-2.5 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">施設を選択してください</option>
+                            <option value="全施設">全施設（統合）</option>
+                        </select>
+                        <p class="mt-1 text-sm text-gray-500">CSVファイルから自動検出された施設が表示されます</p>
                     </div>
 
                     <!-- 年月選択 -->
@@ -528,17 +597,80 @@ app.get('/', (c) => {
                     <i class="fas fa-info-circle text-blue-600 mr-2"></i>使い方
                 </h2>
                 <ol class="list-decimal list-inside space-y-2 text-gray-700">
-                    <li>AirHostから予約データをCSV形式でエクスポート</li>
+                    <li>AirHostから予約データをCSV形式でエクスポート（全施設データ）</li>
                     <li>CSVファイルをアップロード</li>
+                    <li>施設を選択（個別施設または全施設統合）</li>
                     <li>対象の年月を選択</li>
                     <li>「売上管理表を生成」ボタンをクリック</li>
                     <li>自動的にExcelファイルがダウンロードされます</li>
                 </ol>
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        <strong>ヒント:</strong> 全施設のCSVをアップロードすると、施設ごとに個別の売上管理表を作成できます。
+                    </p>
+                </div>
             </div>
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script>
+            let currentFile = null;
+            
+            // CSVファイル選択時に施設一覧を取得
+            document.getElementById('csvFile').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                currentFile = file;
+                const facilitySelectContainer = document.getElementById('facilitySelectContainer');
+                const facilitySelect = document.getElementById('facility');
+                const statusText = document.getElementById('statusText');
+                const status = document.getElementById('status');
+                
+                // ステータス表示
+                status.classList.remove('hidden');
+                statusText.textContent = '施設情報を読み込んでいます...';
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('csv', file);
+                    
+                    const response = await axios.post('/api/facilities', formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
+                    
+                    const facilities = response.data.facilities;
+                    
+                    // 施設選択肢を更新
+                    facilitySelect.innerHTML = '<option value="">施設を選択してください</option>';
+                    facilitySelect.innerHTML += '<option value="全施設">全施設（統合）</option>';
+                    
+                    facilities.forEach(facility => {
+                        const option = document.createElement('option');
+                        option.value = facility;
+                        option.textContent = facility;
+                        facilitySelect.appendChild(option);
+                    });
+                    
+                    // 施設選択を表示
+                    facilitySelectContainer.classList.remove('hidden');
+                    status.classList.add('hidden');
+                    
+                    // 施設数を表示
+                    statusText.textContent = \`\${facilities.length}施設を検出しました\`;
+                    
+                } catch (err) {
+                    console.error(err);
+                    status.classList.add('hidden');
+                    document.getElementById('error').classList.remove('hidden');
+                    document.getElementById('errorText').textContent = 
+                        '施設情報の読み込みに失敗しました: ' + (err.response?.data?.error || err.message);
+                }
+            });
+            
             document.getElementById('uploadForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
@@ -546,12 +678,14 @@ app.get('/', (c) => {
                 const status = document.getElementById('status');
                 const error = document.getElementById('error');
                 const success = document.getElementById('success');
+                const statusText = document.getElementById('statusText');
                 
                 // 表示をリセット
                 status.classList.remove('hidden');
                 error.classList.add('hidden');
                 success.classList.add('hidden');
                 submitBtn.disabled = true;
+                statusText.textContent = '売上管理表を生成中...';
                 
                 try {
                     const formData = new FormData(e.target);
@@ -568,9 +702,17 @@ app.get('/', (c) => {
                     const link = document.createElement('a');
                     link.href = url;
                     
-                    const year = formData.get('year');
-                    const month = formData.get('month');
-                    link.setAttribute('download', \`売上計算書_\${year}年\${month}月.xlsx\`);
+                    // ファイル名はContent-Dispositionヘッダーから取得
+                    const contentDisposition = response.headers['content-disposition'];
+                    let filename = '売上計算書.xlsx';
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename[^;=\\n]*=((['"]).*?\\2|[^;\\n]*)/);
+                        if (filenameMatch && filenameMatch[1]) {
+                            filename = decodeURIComponent(filenameMatch[1].replace(/['"]/g, ''));
+                        }
+                    }
+                    
+                    link.setAttribute('download', filename);
                     
                     document.body.appendChild(link);
                     link.click();
