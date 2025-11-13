@@ -125,29 +125,197 @@ app.post('/api/process', async (c) => {
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet(`${year}年${month}月`)
     
-    // ヘッダー行を追加（3行目にタイトル）
-    worksheet.mergeCells('B3:C3')
-    worksheet.getCell('B3').value = '売上計算書'
-    worksheet.getCell('D3').value = new Date(parseInt(year), parseInt(month) - 1, 1)
-    worksheet.getCell('G3').value = '今昔荘　弁天町　大阪ベイ'
+    // 列幅を設定
+    worksheet.columns = [
+      { width: 2.57 },  // A
+      { width: 10.0 },  // B
+      { width: 11.0 },  // C
+      { width: 12.57 }, // D
+      { width: 23.71 }, // E
+      { width: 10.0 },  // F
+      { width: 10.14 }, // G
+      { width: 10.29 }, // H
+      { width: 7.43 },  // I
+      { width: 7.57 },  // J
+      { width: 7.43 },  // K
+      { width: 10.57 }, // L
+      { width: 10.0 },  // M
+      { width: 10.86 }, // N
+      { width: 10.29 }, // O
+      { width: 10.29 }, // P
+      { width: 10.0 },  // Q
+      { width: 10.0 },  // R
+      { width: 10.0 },  // S
+      { width: 10.0 }   // T
+    ]
     
-    // 5行目にサブヘッダー
+    // 3行目のタイトル行
+    worksheet.mergeCells('B3:C3')
+    const titleCell = worksheet.getCell('B3')
+    titleCell.value = '売上計算書'
+    titleCell.font = { size: 14, bold: true }
+    titleCell.alignment = { vertical: 'middle' }
+    
+    const dateCell = worksheet.getCell('D3')
+    dateCell.value = new Date(parseInt(year), parseInt(month) - 1, 1)
+    dateCell.numFmt = 'yyyy-mm-dd'
+    dateCell.font = { size: 12, bold: true }
+    dateCell.alignment = { horizontal: 'right', vertical: 'middle' }
+    
+    const propertyCell = worksheet.getCell('G3')
+    propertyCell.value = '今昔荘　弁天町　大阪ベイ'
+    propertyCell.font = { size: 12, bold: true }
+    propertyCell.alignment = { vertical: 'middle' }
+    
+    // 5行目のサブヘッダー（紫色の背景）
+    const purpleFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFE5DFEC' } }
     const subHeaders = [
       '', '起算日', '決算日', '全日数', '', '', '', 'RevPER', '予約日数', '稼働率', 
       '平均客数', '月次売上\n（税込み）', 'ADR', '客単価', 'OTAサイト\n手数料', 
       'ADR\nOTA手数料\n差し引き後', 'OTAサイト\n手数料比率', '上代ADR\n（円/日）', 
       '清掃外注/リネン費', '清掃外注/リネン費'
     ]
-    worksheet.getRow(5).values = subHeaders
     
-    // 8行目にデータヘッダー
+    subHeaders.forEach((header, index) => {
+      if (header) {
+        const cell = worksheet.getCell(5, index + 1)
+        cell.value = header
+        cell.fill = purpleFill
+        cell.font = { size: 11 }
+        cell.alignment = { vertical: 'top', wrapText: true }
+      }
+    })
+    
+    // 6行目のサマリー行（オレンジ色の背景）
+    const orangeFill = { type: 'pattern' as const, pattern: 'solid' as const, fgColor: { argb: 'FFFDE9D9' } }
+    const lastRow = 9 + filteredBookings.length - 1
+    
+    // 起算日
+    const startDateCell = worksheet.getCell('B6')
+    startDateCell.value = new Date(parseInt(year), parseInt(month) - 1, 1)
+    startDateCell.numFmt = 'yyyy-mm-dd'
+    startDateCell.alignment = { horizontal: 'right', vertical: 'middle' }
+    
+    // 決算日
+    const endDateCell = worksheet.getCell('C6')
+    endDateCell.value = new Date(parseInt(year), parseInt(month), 0)
+    endDateCell.numFmt = 'yyyy-mm-dd'
+    endDateCell.alignment = { horizontal: 'right', vertical: 'middle' }
+    
+    // 全日数
+    const daysCell = worksheet.getCell('D6')
+    daysCell.value = { formula: '=C6-B6+1' }
+    daysCell.alignment = { vertical: 'middle' }
+    
+    // RevPER
+    const revperCell = worksheet.getCell('H6')
+    revperCell.value = { formula: '=J6*M6' }
+    revperCell.fill = orangeFill
+    revperCell.alignment = { vertical: 'middle' }
+    
+    // 予約日数
+    const bookingDaysCell = worksheet.getCell('I6')
+    bookingDaysCell.value = { formula: `=SUM(I9:I${lastRow})` }
+    bookingDaysCell.fill = orangeFill
+    bookingDaysCell.alignment = { vertical: 'middle' }
+    
+    // 稼働率
+    const occupancyCell = worksheet.getCell('J6')
+    occupancyCell.value = { formula: '=I6/D6' }
+    occupancyCell.fill = orangeFill
+    occupancyCell.numFmt = '0%'
+    occupancyCell.alignment = { vertical: 'middle' }
+    
+    // 平均客数
+    const avgGuestsCell = worksheet.getCell('K6')
+    avgGuestsCell.value = { formula: `=SUMPRODUCT(K9:K${lastRow},I9:I${lastRow})/I6` }
+    avgGuestsCell.fill = orangeFill
+    avgGuestsCell.numFmt = '0.0'
+    avgGuestsCell.alignment = { vertical: 'middle' }
+    
+    // 月次売上
+    const totalSalesCell = worksheet.getCell('L6')
+    totalSalesCell.value = { formula: `=SUM(L9:L${lastRow})` }
+    totalSalesCell.fill = orangeFill
+    totalSalesCell.numFmt = '#,##0'
+    totalSalesCell.alignment = { vertical: 'middle' }
+    
+    // ADR
+    const adrCell = worksheet.getCell('M6')
+    adrCell.value = { formula: `=SUM(L9:L${lastRow})/SUM(I9:I${lastRow})` }
+    adrCell.fill = orangeFill
+    adrCell.numFmt = '#,##0'
+    adrCell.alignment = { vertical: 'middle' }
+    
+    // 客単価
+    const guestPriceCell = worksheet.getCell('N6')
+    guestPriceCell.value = { formula: '=M6/K6' }
+    guestPriceCell.fill = orangeFill
+    guestPriceCell.numFmt = '#,##0'
+    guestPriceCell.alignment = { vertical: 'middle' }
+    
+    // OTAサイト手数料
+    const otaFeeCell = worksheet.getCell('O6')
+    otaFeeCell.value = { formula: `=SUM(O9:O${lastRow})` }
+    otaFeeCell.fill = orangeFill
+    otaFeeCell.numFmt = '#,##0'
+    otaFeeCell.alignment = { vertical: 'middle' }
+    
+    // ADR OTA手数料差し引き後
+    const adrAfterFeeCell = worksheet.getCell('P6')
+    adrAfterFeeCell.value = { formula: '=(L6-O6)/I6' }
+    adrAfterFeeCell.fill = orangeFill
+    adrAfterFeeCell.numFmt = '#,##0'
+    adrAfterFeeCell.alignment = { vertical: 'bottom' }
+    
+    // OTAサイト手数料比率
+    const feeRatioCell = worksheet.getCell('Q6')
+    feeRatioCell.value = { formula: '=O6/L6' }
+    feeRatioCell.fill = orangeFill
+    feeRatioCell.numFmt = '0.0%'
+    feeRatioCell.alignment = { vertical: 'middle' }
+    
+    // 上代ADR
+    const retailAdrCell = worksheet.getCell('R6')
+    retailAdrCell.value = { formula: `=AVERAGE(R9:R${lastRow})` }
+    retailAdrCell.fill = orangeFill
+    retailAdrCell.numFmt = '#,##0'
+    retailAdrCell.alignment = { vertical: 'middle' }
+    
+    // 清掃外注/リネン費（S列とT列）
+    const cleaningCell1 = worksheet.getCell('S6')
+    cleaningCell1.value = { formula: `=SUM(S9:S${lastRow})` }
+    cleaningCell1.numFmt = '#,##0'
+    cleaningCell1.alignment = { vertical: 'middle' }
+    
+    const cleaningCell2 = worksheet.getCell('T6')
+    cleaningCell2.value = { formula: `=SUM(T9:T${lastRow})` }
+    cleaningCell2.numFmt = '#,##0'
+    cleaningCell2.alignment = { vertical: 'middle' }
+    
+    // 7行目（追加の計算式）
+    const avgDaysCell = worksheet.getCell('I7')
+    avgDaysCell.value = { formula: `=SUMIF(I9:I${lastRow},"<>0")/COUNTIF(I9:I${lastRow},"<>0")` }
+    avgDaysCell.numFmt = '0.0'
+    avgDaysCell.alignment = { vertical: 'middle' }
+    
+    // 8行目のデータヘッダー（紫色の背景）
     const dataHeaders = [
       '', '言語', '国籍', '販路', 'ゲスト名', '予約日', 'C/I', 'C/O', '滞在日数', 
       '予約間隔', '人数', '支払金額', 'ADR\n（円/日）', '客単価\n（円/日人）', 
       'OTAサイト\n手数料', 'ADR\nOTA手数料\n差し引き後', '注釈', '上代ADR\n（円/日）', 
       '清掃外注/リネン費', '付加価値利益'
     ]
-    worksheet.getRow(8).values = dataHeaders
+    
+    dataHeaders.forEach((header, index) => {
+      if (header) {
+        const cell = worksheet.getCell(8, index + 1)
+        cell.value = header
+        cell.fill = purpleFill
+        cell.font = { size: 11 }
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+      }
+    })
     
     // データを追加（9行目から）
     let currentRow = 9
@@ -169,24 +337,60 @@ app.post('/api/process', async (c) => {
       const channelId = booking['チャンネル予約ID']
       const guestWithId = `${guestName} (${channelId})`
       
-      worksheet.getRow(currentRow).values = [
-        '',
-        language,
-        country,
-        channel,
-        guestWithId,
-        bookingDate,
-        checkinDate,
-        checkoutDate,
-        { formula: `H${currentRow}-G${currentRow}` }, // 滞在日数
-        { formula: `G${currentRow}-F${currentRow}` }, // 予約間隔
-        guestCount,
-        sales,
-        { formula: `IF(I${currentRow}=0,"",L${currentRow}/I${currentRow})` }, // ADR
-        { formula: `IF(I${currentRow}=0,"",M${currentRow}/K${currentRow})` }, // 客単価
-        otaFee,
-        { formula: `IF(I${currentRow}=0,"",(L${currentRow}-O${currentRow})/I${currentRow})` } // ADR OTA手数料差し引き後
-      ]
+      const row = worksheet.getRow(currentRow)
+      
+      // データを設定
+      row.getCell(2).value = language // B列: 言語
+      row.getCell(3).value = country  // C列: 国籍
+      row.getCell(4).value = channel  // D列: 販路
+      row.getCell(5).value = guestWithId // E列: ゲスト名
+      
+      // 予約日
+      if (bookingDate) {
+        row.getCell(6).value = bookingDate
+        row.getCell(6).numFmt = 'yyyy-mm-dd'
+      }
+      
+      // チェックイン
+      if (checkinDate) {
+        row.getCell(7).value = checkinDate
+        row.getCell(7).numFmt = 'yyyy-mm-dd'
+      }
+      
+      // チェックアウト
+      if (checkoutDate) {
+        row.getCell(8).value = checkoutDate
+        row.getCell(8).numFmt = 'yyyy-mm-dd'
+      }
+      
+      // 滞在日数（計算式）
+      row.getCell(9).value = { formula: `=H${currentRow}-G${currentRow}` }
+      
+      // 予約間隔（計算式）
+      row.getCell(10).value = { formula: `=G${currentRow}-F${currentRow}` }
+      
+      // 人数
+      row.getCell(11).value = guestCount
+      
+      // 支払金額
+      row.getCell(12).value = sales
+      row.getCell(12).numFmt = '#,##0'
+      
+      // ADR（計算式）
+      row.getCell(13).value = { formula: `=IF(I${currentRow}=0,"",L${currentRow}/I${currentRow})` }
+      row.getCell(13).numFmt = '#,##0'
+      
+      // 客単価（計算式）
+      row.getCell(14).value = { formula: `=IF(I${currentRow}=0,"",M${currentRow}/K${currentRow})` }
+      row.getCell(14).numFmt = '#,##0'
+      
+      // OTAサイト手数料
+      row.getCell(15).value = otaFee
+      row.getCell(15).numFmt = '#,##0'
+      
+      // ADR OTA手数料差し引き後（計算式）
+      row.getCell(16).value = { formula: `=IF(I${currentRow}=0,"",(L${currentRow}-O${currentRow})/I${currentRow})` }
+      row.getCell(16).numFmt = '#,##0'
       
       currentRow++
     })

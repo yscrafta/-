@@ -1,21 +1,94 @@
-```txt
-npm install
-npm run dev
-```
+# 売上管理表作成ツール
 
-```txt
-npm run deploy
-```
+## プロジェクト概要
+- **名前**: 売上管理表作成ツール
+- **目的**: AirHostのCSVファイルから売上管理表（Excel形式）を自動生成
+- **主な機能**: 
+  - CSVファイルのアップロード
+  - 指定月の予約データ抽出
+  - Excelファイルの自動生成とダウンロード
+  - 販路別データ整理
+  - 言語・国籍の自動判定
 
-[For generating/synchronizing types based on your Worker configuration run](https://developers.cloudflare.com/workers/wrangler/commands/#types):
+## 現在完了している機能
+✅ CSVファイルのアップロード機能  
+✅ 年月の選択機能  
+✅ CSV解析とデータフィルタリング  
+✅ システムキャンセルの自動除外  
+✅ 販路名の自動マッピング（Airbnb、Booking.com、一休.com等）  
+✅ 国籍から言語の自動判定  
+✅ 国名の日本語変換  
+✅ Excel形式での売上管理表生成  
+✅ 計算式の自動設定（滞在日数、ADR、客単価等）  
+✅ レスポンシブUIデザイン
 
-```txt
-npm run cf-typegen
-```
+## 公開URL
+- **サンドボックス**: https://3000-ig9ldweph8q90uxshkn1h-b237eb32.sandbox.novita.ai
+- **API エンドポイント**: 
+  - `GET /` - メインページ
+  - `POST /api/process` - CSV処理とExcel生成
 
-Pass the `CloudflareBindings` as generics when instantiation `Hono`:
+## データ構造
+### 入力データ（CSV）
+- 予約サイト、チャンネル予約ID、チェックイン、チェックアウト
+- ゲスト名、国籍、ゲスト数、合計日数
+- 販売金額、OTAサービス料、受取金、クリーニング代
+- 状態（確認済み、システムキャンセル等）
 
-```ts
-// src/index.ts
-const app = new Hono<{ Bindings: CloudflareBindings }>()
-```
+### 出力データ（Excel）
+- 言語、国籍、販路
+- ゲスト名（予約ID付き）
+- 予約日、チェックイン、チェックアウト
+- 滞在日数（計算式）
+- 人数、支払金額
+- ADR、客単価（計算式）
+- OTAサービス料
+
+## 使用方法
+1. AirHostから予約データをCSV形式でエクスポート
+2. ウェブページでCSVファイルをアップロード
+3. 対象の年月を選択（例: 2025年11月）
+4. 「売上管理表を生成」ボタンをクリック
+5. 自動的にExcelファイルがダウンロードされる
+
+## デプロイ
+- **プラットフォーム**: Cloudflare Pages
+- **ステータス**: ✅ サンドボックス環境で稼働中
+- **技術スタック**: 
+  - Hono（軽量Webフレームワーク）
+  - TypeScript
+  - ExcelJS（Excel生成）
+  - TailwindCSS（UIフレームワーク）
+- **最終更新**: 2025-11-13
+
+## 開発メモ
+### 販路マッピング
+- Airbnb → Airbnb
+- Booking.com → Booking
+- 一休.com → 一休
+- konjakuso → 自社サイト
+- 楽天トラベル → 楽天
+- じゃらん → じゃらん
+
+### 言語判定ロジック
+- 国籍情報から自動判定
+- 日本 → 日本語
+- アメリカ → 英語
+- 中国/台湾/香港 → 中国語
+- ドイツ/スイス/オーストリア → ドイツ語
+- その他の国も対応済み
+
+## まだ実装していない機能
+- テンプレートExcelファイルのアップロード機能
+- データプレビュー機能
+- 複数月の一括処理
+- CSVエラーハンドリングの詳細化
+- データ検証機能
+
+## 推奨される次の開発ステップ
+1. テンプレートExcelファイルのアップロード機能追加
+2. 生成前のデータプレビュー機能
+3. エラーメッセージの詳細化
+4. CSVフォーマットのバリデーション強化
+5. 複数月の一括処理機能
+6. データ統計情報の表示（総売上、予約件数等）
