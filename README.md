@@ -38,10 +38,12 @@
 ✅ レスポンシブUIデザイン
 
 ## 公開URL
-- **サンドボックス**: https://3000-ig9ldweph8q90uxshkn1h-b237eb32.sandbox.novita.ai
+- **本番環境（Cloudflare Pages）**: https://7d93ced3.webapp-4kf.pages.dev
+- **サンドボックス**: https://3000-ig9ldweph8q90uxshkn1h-00000000.sandbox.novita.ai
 - **API エンドポイント**: 
   - `GET /` - メインページ
   - `POST /api/process` - CSV処理とExcel生成
+  - `POST /api/facilities` - 施設一覧取得
 
 ## データ構造
 ### 入力データ（CSV）
@@ -102,13 +104,15 @@
 
 ## デプロイ
 - **プラットフォーム**: Cloudflare Pages
-- **ステータス**: ✅ サンドボックス環境で稼働中
+- **ステータス**: ✅ 本番環境で稼働中（24時間365日）
+- **本番URL**: https://7d93ced3.webapp-4kf.pages.dev
 - **技術スタック**: 
   - Hono（軽量Webフレームワーク）
   - TypeScript
   - ExcelJS（Excel生成）
   - TailwindCSS（UIフレームワーク）
-- **最終更新**: 2025-11-13
+  - Cloudflare Workers（エッジコンピューティング）
+- **最終更新**: 2025-12-31
 
 ## 開発メモ
 ### 販路マッピング

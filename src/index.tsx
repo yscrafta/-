@@ -302,6 +302,25 @@ app.post('/api/process', async (c) => {
       { width: 10.0 }   // T
     ]
     
+    // 罫線スタイルの定義
+    const thinBorder = {
+      top: { style: 'thin' as const },
+      bottom: { style: 'thin' as const },
+      left: { style: 'thin' as const },
+      right: { style: 'thin' as const }
+    }
+    
+    // 行の高さを設定
+    worksheet.getRow(5).height = 12.75
+    worksheet.getRow(6).height = 12.75
+    worksheet.getRow(7).height = 12.75
+    worksheet.getRow(8).height = 12.75
+    
+    // データ行の高さ
+    for (let i = 9; i <= 9 + filteredBookings.length; i++) {
+      worksheet.getRow(i).height = 12.75
+    }
+    
     // 3行目のタイトル行
     worksheet.mergeCells('B3:C3')
     const titleCell = worksheet.getCell('B3')
@@ -311,7 +330,7 @@ app.post('/api/process', async (c) => {
     
     const dateCell = worksheet.getCell('D3')
     dateCell.value = new Date(parseInt(year), parseInt(month) - 1, 1)
-    dateCell.numFmt = 'yyyy-mm-dd'
+    dateCell.numFmt = 'yyyy"年"mm"月"dd"日"'
     dateCell.font = { size: 12, bold: true }
     dateCell.alignment = { horizontal: 'right', vertical: 'middle' }
     
@@ -336,6 +355,7 @@ app.post('/api/process', async (c) => {
         cell.fill = purpleFill
         cell.font = { size: 11 }
         cell.alignment = { vertical: 'top', wrapText: true }
+        cell.border = thinBorder
       }
     })
     
@@ -346,31 +366,36 @@ app.post('/api/process', async (c) => {
     // 起算日
     const startDateCell = worksheet.getCell('B6')
     startDateCell.value = new Date(parseInt(year), parseInt(month) - 1, 1)
-    startDateCell.numFmt = 'yyyy-mm-dd'
+    startDateCell.numFmt = 'yyyy"年"mm"月"dd"日"'
     startDateCell.alignment = { horizontal: 'right', vertical: 'middle' }
+    startDateCell.border = thinBorder
     
     // 決算日
     const endDateCell = worksheet.getCell('C6')
     endDateCell.value = new Date(parseInt(year), parseInt(month), 0)
-    endDateCell.numFmt = 'yyyy-mm-dd'
+    endDateCell.numFmt = 'yyyy"年"mm"月"dd"日"'
     endDateCell.alignment = { horizontal: 'right', vertical: 'middle' }
+    endDateCell.border = thinBorder
     
     // 全日数
     const daysCell = worksheet.getCell('D6')
     daysCell.value = { formula: '=C6-B6+1' }
     daysCell.alignment = { vertical: 'middle' }
+    daysCell.border = thinBorder
     
     // RevPER
     const revperCell = worksheet.getCell('H6')
     revperCell.value = { formula: '=J6*M6' }
     revperCell.fill = orangeFill
     revperCell.alignment = { vertical: 'middle' }
+    revperCell.border = thinBorder
     
     // 予約日数
     const bookingDaysCell = worksheet.getCell('I6')
     bookingDaysCell.value = { formula: `=SUM(I9:I${lastRow})` }
     bookingDaysCell.fill = orangeFill
     bookingDaysCell.alignment = { vertical: 'middle' }
+    bookingDaysCell.border = thinBorder
     
     // 稼働率
     const occupancyCell = worksheet.getCell('J6')
@@ -378,6 +403,7 @@ app.post('/api/process', async (c) => {
     occupancyCell.fill = orangeFill
     occupancyCell.numFmt = '0%'
     occupancyCell.alignment = { vertical: 'middle' }
+    occupancyCell.border = thinBorder
     
     // 平均客数
     const avgGuestsCell = worksheet.getCell('K6')
@@ -385,6 +411,7 @@ app.post('/api/process', async (c) => {
     avgGuestsCell.fill = orangeFill
     avgGuestsCell.numFmt = '0.0'
     avgGuestsCell.alignment = { vertical: 'middle' }
+    avgGuestsCell.border = thinBorder
     
     // 月次売上
     const totalSalesCell = worksheet.getCell('L6')
@@ -392,6 +419,7 @@ app.post('/api/process', async (c) => {
     totalSalesCell.fill = orangeFill
     totalSalesCell.numFmt = '#,##0'
     totalSalesCell.alignment = { vertical: 'middle' }
+    totalSalesCell.border = thinBorder
     
     // ADR
     const adrCell = worksheet.getCell('M6')
@@ -399,6 +427,7 @@ app.post('/api/process', async (c) => {
     adrCell.fill = orangeFill
     adrCell.numFmt = '#,##0'
     adrCell.alignment = { vertical: 'middle' }
+    adrCell.border = thinBorder
     
     // 客単価
     const guestPriceCell = worksheet.getCell('N6')
@@ -406,6 +435,7 @@ app.post('/api/process', async (c) => {
     guestPriceCell.fill = orangeFill
     guestPriceCell.numFmt = '#,##0'
     guestPriceCell.alignment = { vertical: 'middle' }
+    guestPriceCell.border = thinBorder
     
     // OTAサイト手数料
     const otaFeeCell = worksheet.getCell('O6')
@@ -413,6 +443,7 @@ app.post('/api/process', async (c) => {
     otaFeeCell.fill = orangeFill
     otaFeeCell.numFmt = '#,##0'
     otaFeeCell.alignment = { vertical: 'middle' }
+    otaFeeCell.border = thinBorder
     
     // ADR OTA手数料差し引き後
     const adrAfterFeeCell = worksheet.getCell('P6')
@@ -420,6 +451,7 @@ app.post('/api/process', async (c) => {
     adrAfterFeeCell.fill = orangeFill
     adrAfterFeeCell.numFmt = '#,##0'
     adrAfterFeeCell.alignment = { vertical: 'bottom' }
+    adrAfterFeeCell.border = thinBorder
     
     // OTAサイト手数料比率
     const feeRatioCell = worksheet.getCell('Q6')
@@ -427,6 +459,7 @@ app.post('/api/process', async (c) => {
     feeRatioCell.fill = orangeFill
     feeRatioCell.numFmt = '0.0%'
     feeRatioCell.alignment = { vertical: 'middle' }
+    feeRatioCell.border = thinBorder
     
     // 上代ADR
     const retailAdrCell = worksheet.getCell('R6')
@@ -434,23 +467,27 @@ app.post('/api/process', async (c) => {
     retailAdrCell.fill = orangeFill
     retailAdrCell.numFmt = '#,##0'
     retailAdrCell.alignment = { vertical: 'middle' }
+    retailAdrCell.border = thinBorder
     
     // 清掃外注/リネン費（S列とT列）
     const cleaningCell1 = worksheet.getCell('S6')
     cleaningCell1.value = { formula: `=SUM(S9:S${lastRow})` }
     cleaningCell1.numFmt = '#,##0'
     cleaningCell1.alignment = { vertical: 'middle' }
+    cleaningCell1.border = thinBorder
     
     const cleaningCell2 = worksheet.getCell('T6')
     cleaningCell2.value = { formula: `=SUM(T9:T${lastRow})` }
     cleaningCell2.numFmt = '#,##0'
     cleaningCell2.alignment = { vertical: 'middle' }
+    cleaningCell2.border = thinBorder
     
     // 7行目（追加の計算式）
     const avgDaysCell = worksheet.getCell('I7')
     avgDaysCell.value = { formula: `=SUMIF(I9:I${lastRow},"<>0")/COUNTIF(I9:I${lastRow},"<>0")` }
     avgDaysCell.numFmt = '0.0'
     avgDaysCell.alignment = { vertical: 'middle' }
+    avgDaysCell.border = thinBorder
     
     // 8行目のデータヘッダー（紫色の背景）
     const dataHeaders = [
@@ -467,6 +504,7 @@ app.post('/api/process', async (c) => {
         cell.fill = purpleFill
         cell.font = { size: 11 }
         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+        cell.border = thinBorder
       }
     })
     
@@ -492,58 +530,76 @@ app.post('/api/process', async (c) => {
       
       const row = worksheet.getRow(currentRow)
       
-      // データを設定
+      // データを設定（罫線も適用）
       row.getCell(2).value = language // B列: 言語
+      row.getCell(2).border = thinBorder
+      
       row.getCell(3).value = country  // C列: 国籍
+      row.getCell(3).border = thinBorder
+      
       row.getCell(4).value = channel  // D列: 販路
+      row.getCell(4).border = thinBorder
+      
       row.getCell(5).value = guestWithId // E列: ゲスト名
+      row.getCell(5).border = thinBorder
       
       // 予約日
       if (bookingDate) {
         row.getCell(6).value = bookingDate
-        row.getCell(6).numFmt = 'yyyy-mm-dd'
+        row.getCell(6).numFmt = 'yyyy"年"mm"月"dd"日"'
       }
+      row.getCell(6).border = thinBorder
       
       // チェックイン
       if (checkinDate) {
         row.getCell(7).value = checkinDate
-        row.getCell(7).numFmt = 'yyyy-mm-dd'
+        row.getCell(7).numFmt = 'yyyy"年"mm"月"dd"日"'
       }
+      row.getCell(7).border = thinBorder
       
       // チェックアウト
       if (checkoutDate) {
         row.getCell(8).value = checkoutDate
-        row.getCell(8).numFmt = 'yyyy-mm-dd'
+        row.getCell(8).numFmt = 'yyyy"年"mm"月"dd"日"'
       }
+      row.getCell(8).border = thinBorder
       
       // 滞在日数（計算式）
       row.getCell(9).value = { formula: `=H${currentRow}-G${currentRow}` }
+      row.getCell(9).border = thinBorder
       
       // 予約間隔（計算式）
       row.getCell(10).value = { formula: `=G${currentRow}-F${currentRow}` }
+      row.getCell(10).border = thinBorder
       
       // 人数
       row.getCell(11).value = guestCount
+      row.getCell(11).border = thinBorder
       
       // 支払金額
       row.getCell(12).value = sales
       row.getCell(12).numFmt = '#,##0'
+      row.getCell(12).border = thinBorder
       
       // ADR（計算式）
       row.getCell(13).value = { formula: `=IF(I${currentRow}=0,"",L${currentRow}/I${currentRow})` }
       row.getCell(13).numFmt = '#,##0'
+      row.getCell(13).border = thinBorder
       
       // 客単価（計算式）
       row.getCell(14).value = { formula: `=IF(I${currentRow}=0,"",M${currentRow}/K${currentRow})` }
       row.getCell(14).numFmt = '#,##0'
+      row.getCell(14).border = thinBorder
       
       // OTAサイト手数料
       row.getCell(15).value = otaFee
       row.getCell(15).numFmt = '#,##0'
+      row.getCell(15).border = thinBorder
       
       // ADR OTA手数料差し引き後（計算式）
       row.getCell(16).value = { formula: `=IF(I${currentRow}=0,"",(L${currentRow}-O${currentRow})/I${currentRow})` }
       row.getCell(16).numFmt = '#,##0'
+      row.getCell(16).border = thinBorder
       
       currentRow++
     })
