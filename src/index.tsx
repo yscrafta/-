@@ -307,15 +307,15 @@ app.post('/api/process', async (c) => {
       right: { style: 'thin' as const }
     }
     
-    // 行の高さを設定
-    worksheet.getRow(5).height = 12.75
-    worksheet.getRow(6).height = 12.75
-    worksheet.getRow(7).height = 12.75
-    worksheet.getRow(8).height = 25.5  // 2行分の高さ
+    // 行の高さを設定（全て1.5倍）
+    worksheet.getRow(5).height = 19.125  // 12.75 × 1.5
+    worksheet.getRow(6).height = 19.125  // 12.75 × 1.5
+    worksheet.getRow(7).height = 19.125  // 12.75 × 1.5
+    worksheet.getRow(8).height = 38.25   // 25.5 × 1.5（2行分の高さ）
     
-    // データ行の高さ
+    // データ行の高さ（全て1.5倍）
     for (let i = 9; i <= 9 + filteredBookings.length; i++) {
-      worksheet.getRow(i).height = 12.75
+      worksheet.getRow(i).height = 19.125  // 12.75 × 1.5
     }
     
     // 3行目のタイトル行
