@@ -296,11 +296,7 @@ app.post('/api/process', async (c) => {
       { width: 10.0 },  // M
       { width: 10.86 }, // N
       { width: 10.29 }, // O
-      { width: 10.29 }, // P
-      { width: 10.0 },  // Q
-      { width: 10.0 },  // R
-      { width: 10.0 },  // S
-      { width: 10.0 }   // T
+      { width: 10.29 }  // P
     ]
     
     // 罫線スタイルの定義
@@ -345,8 +341,7 @@ app.post('/api/process', async (c) => {
     const subHeaders = [
       '', '起算日', '決算日', '全日数', '', '', '', 'RevPER', '予約日数', '稼働率', 
       '平均客数', '月次売上\n（税込み）', 'ADR', '客単価', 'OTAサイト\n手数料', 
-      'ADR\nOTA手数料\n差し引き後', 'OTAサイト\n手数料比率', '上代ADR\n（円/日）', 
-      '清掃外注/リネン費', '清掃外注/リネン費'
+      'ADR\nOTA手数料\n差し引き後'
     ]
     
     subHeaders.forEach((header, index) => {
@@ -454,34 +449,7 @@ app.post('/api/process', async (c) => {
     adrAfterFeeCell.alignment = { vertical: 'bottom' }
     adrAfterFeeCell.border = thinBorder
     
-    // OTAサイト手数料比率
-    const feeRatioCell = worksheet.getCell('Q6')
-    feeRatioCell.value = { formula: '=O6/L6' }
-    feeRatioCell.fill = orangeFill
-    feeRatioCell.numFmt = '0.0%'
-    feeRatioCell.alignment = { vertical: 'middle' }
-    feeRatioCell.border = thinBorder
-    
-    // 上代ADR
-    const retailAdrCell = worksheet.getCell('R6')
-    retailAdrCell.value = { formula: `=AVERAGE(R9:R${lastRow})` }
-    retailAdrCell.fill = orangeFill
-    retailAdrCell.numFmt = '#,##0'
-    retailAdrCell.alignment = { vertical: 'middle' }
-    retailAdrCell.border = thinBorder
-    
-    // 清掃外注/リネン費（S列とT列）
-    const cleaningCell1 = worksheet.getCell('S6')
-    cleaningCell1.value = { formula: `=SUM(S9:S${lastRow})` }
-    cleaningCell1.numFmt = '#,##0'
-    cleaningCell1.alignment = { vertical: 'middle' }
-    cleaningCell1.border = thinBorder
-    
-    const cleaningCell2 = worksheet.getCell('T6')
-    cleaningCell2.value = { formula: `=SUM(T9:T${lastRow})` }
-    cleaningCell2.numFmt = '#,##0'
-    cleaningCell2.alignment = { vertical: 'middle' }
-    cleaningCell2.border = thinBorder
+    // OTAサイト手数料比率（削除）
     
     // 7行目（追加の計算式）
     const avgDaysCell = worksheet.getCell('I7')
@@ -494,8 +462,7 @@ app.post('/api/process', async (c) => {
     const dataHeaders = [
       '', '言語', '国籍', '販路', 'ゲスト名', '予約日', 'C/I', 'C/O', '滞在日数', 
       '予約間隔', '人数', '支払金額', 'ADR\n（円/日）', '客単価\n（円/日人）', 
-      'OTAサイト\n手数料', 'ADR\nOTA手数料\n差し引き後', '注釈', '上代ADR\n（円/日）', 
-      '清掃外注/リネン費', '付加価値利益'
+      'OTAサイト\n手数料', 'ADR\n（OTA引後）'
     ]
     
     dataHeaders.forEach((header, index) => {
