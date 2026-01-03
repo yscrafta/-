@@ -331,7 +331,7 @@ app.post('/api/process', async (c) => {
     
     const dateCell = worksheet.getCell('D3')
     dateCell.value = new Date(parseInt(year), parseInt(month) - 1, 1)
-    dateCell.numFmt = 'yyyy"年"mm"月"dd"日"'
+    dateCell.numFmt = 'mm"月"dd"日"'
     dateCell.font = { size: 12, bold: true }
     dateCell.alignment = { horizontal: 'right', vertical: 'middle' }
     
@@ -367,14 +367,14 @@ app.post('/api/process', async (c) => {
     // 起算日
     const startDateCell = worksheet.getCell('B6')
     startDateCell.value = new Date(parseInt(year), parseInt(month) - 1, 1)
-    startDateCell.numFmt = 'yyyy"年"mm"月"dd"日"'
+    startDateCell.numFmt = 'mm"月"dd"日"'
     startDateCell.alignment = { horizontal: 'right', vertical: 'middle' }
     startDateCell.border = thinBorder
     
     // 決算日
     const endDateCell = worksheet.getCell('C6')
     endDateCell.value = new Date(parseInt(year), parseInt(month), 0)
-    endDateCell.numFmt = 'yyyy"年"mm"月"dd"日"'
+    endDateCell.numFmt = 'mm"月"dd"日"'
     endDateCell.alignment = { horizontal: 'right', vertical: 'middle' }
     endDateCell.border = thinBorder
     
@@ -547,21 +547,21 @@ app.post('/api/process', async (c) => {
       // 予約日
       if (bookingDate) {
         row.getCell(6).value = bookingDate
-        row.getCell(6).numFmt = 'yyyy"年"mm"月"dd"日"'
+        row.getCell(6).numFmt = 'mm"月"dd"日"'
       }
       row.getCell(6).border = thinBorder
       
       // チェックイン
       if (checkinDate) {
         row.getCell(7).value = checkinDate
-        row.getCell(7).numFmt = 'yyyy"年"mm"月"dd"日"'
+        row.getCell(7).numFmt = 'mm"月"dd"日"'
       }
       row.getCell(7).border = thinBorder
       
       // チェックアウト
       if (checkoutDate) {
         row.getCell(8).value = checkoutDate
-        row.getCell(8).numFmt = 'yyyy"年"mm"月"dd"日"'
+        row.getCell(8).numFmt = 'mm"月"dd"日"'
       }
       row.getCell(8).border = thinBorder
       
