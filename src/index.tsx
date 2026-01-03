@@ -311,7 +311,7 @@ app.post('/api/process', async (c) => {
     worksheet.getRow(5).height = 12.75
     worksheet.getRow(6).height = 12.75
     worksheet.getRow(7).height = 12.75
-    worksheet.getRow(8).height = 12.75
+    worksheet.getRow(8).height = 25.5  // 2行分の高さ
     
     // データ行の高さ
     for (let i = 9; i <= 9 + filteredBookings.length; i++) {
