@@ -237,11 +237,12 @@ app.post('/api/process', async (c) => {
         if (rowFacility !== selectedFacility) return false
       }
       
-      const checkin = row['チェックイン']
-      if (!checkin) return false
+      // チェックアウト日で月を判定
+      const checkout = row['チェックアウト']
+      if (!checkout) return false
       
       try {
-        const date = new Date(checkin)
+        const date = new Date(checkout)
         return date.getFullYear() === parseInt(year) && 
                date.getMonth() + 1 === parseInt(month)
       } catch {
