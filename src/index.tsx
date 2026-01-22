@@ -326,8 +326,7 @@ app.post('/api/process', async (c) => {
     titleCell.alignment = { vertical: 'middle' }
     
     const dateCell = worksheet.getCell('D3')
-    dateCell.value = new Date(parseInt(year), parseInt(month) - 1, 1)
-    dateCell.numFmt = 'mm"月"dd"日"'
+    dateCell.value = `${year}年${month}月`
     dateCell.font = { size: 12, bold: true }
     dateCell.alignment = { horizontal: 'right', vertical: 'middle' }
     
@@ -361,15 +360,17 @@ app.post('/api/process', async (c) => {
     
     // 起算日
     const startDateCell = worksheet.getCell('B6')
-    startDateCell.value = new Date(parseInt(year), parseInt(month) - 1, 1)
-    startDateCell.numFmt = 'mm"月"dd"日"'
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
+    startDateCell.value = startDate
+    startDateCell.numFmt = 'yyyy/mm/dd'
     startDateCell.alignment = { horizontal: 'right', vertical: 'middle' }
     startDateCell.border = thinBorder
     
     // 決算日
     const endDateCell = worksheet.getCell('C6')
-    endDateCell.value = new Date(parseInt(year), parseInt(month), 0)
-    endDateCell.numFmt = 'mm"月"dd"日"'
+    const endDate = new Date(parseInt(year), parseInt(month), 0)
+    endDateCell.value = endDate
+    endDateCell.numFmt = 'yyyy/mm/dd'
     endDateCell.alignment = { horizontal: 'right', vertical: 'middle' }
     endDateCell.border = thinBorder
     
@@ -512,62 +513,73 @@ app.post('/api/process', async (c) => {
       row.getCell(5).border = thinBorder
       
       // 予約日
+      const cell6 = row.getCell(6)
       if (bookingDate) {
-        row.getCell(6).value = bookingDate
-        row.getCell(6).numFmt = 'mm"月"dd"日"'
+        cell6.value = bookingDate
+        cell6.numFmt = 'yyyy/mm/dd'
       }
-      row.getCell(6).border = thinBorder
+      cell6.border = thinBorder
       
       // チェックイン
+      const cell7 = row.getCell(7)
       if (checkinDate) {
-        row.getCell(7).value = checkinDate
-        row.getCell(7).numFmt = 'mm"月"dd"日"'
+        cell7.value = checkinDate
+        cell7.numFmt = 'yyyy/mm/dd'
       }
-      row.getCell(7).border = thinBorder
+      cell7.border = thinBorder
       
       // チェックアウト
+      const cell8 = row.getCell(8)
       if (checkoutDate) {
-        row.getCell(8).value = checkoutDate
-        row.getCell(8).numFmt = 'mm"月"dd"日"'
+        cell8.value = checkoutDate
+        cell8.numFmt = 'yyyy/mm/dd'
       }
-      row.getCell(8).border = thinBorder
+      cell8.border = thinBorder
       
       // 滞在日数（計算式）
-      row.getCell(9).value = { formula: `=H${currentRow}-G${currentRow}` }
-      row.getCell(9).border = thinBorder
+      const cell9 = row.getCell(9)
+      cell9.value = { formula: `H${currentRow}-G${currentRow}` }
+      cell9.border = thinBorder
       
       // 予約間隔（計算式）
-      row.getCell(10).value = { formula: `=G${currentRow}-F${currentRow}` }
-      row.getCell(10).border = thinBorder
+      const cell10 = row.getCell(10)
+      cell10.value = { formula: `G${currentRow}-F${currentRow}` }
+      cell10.border = thinBorder
       
       // 人数
-      row.getCell(11).value = guestCount
-      row.getCell(11).border = thinBorder
+      const cell11 = row.getCell(11)
+      cell11.value = guestCount
+      cell11.border = thinBorder
       
       // 支払金額
-      row.getCell(12).value = sales
-      row.getCell(12).numFmt = '#,##0'
-      row.getCell(12).border = thinBorder
+      const cell12 = row.getCell(12)
+      cell12.value = sales
+      cell12.numFmt = '#,##0'
+      cell12.border = thinBorder
       
       // ADR（計算式）
-      row.getCell(13).value = { formula: `=IF(I${currentRow}=0,"",L${currentRow}/I${currentRow})` }
-      row.getCell(13).numFmt = '#,##0'
-      row.getCell(13).border = thinBorder
+      const cell13 = row.getCell(13)
+      cell13.value = { formula: `IF(I${currentRow}=0,"",L${currentRow}/I${currentRow})` }
+      cell13.numFmt = '#,##0'
+      cell13.border = thinBorder
       
       // 客単価（計算式）
-      row.getCell(14).value = { formula: `=IF(I${currentRow}=0,"",M${currentRow}/K${currentRow})` }
-      row.getCell(14).numFmt = '#,##0'
-      row.getCell(14).border = thinBorder
+      const cell14 = row.getCell(14)
+      cell14.value = { formula: `IF(I${currentRow}=0,"",M${currentRow}/K${currentRow})` }
+      cell14.numFmt = '#,##0'
+      cell14.border = thinBorder
       
       // OTAサイト手数料
-      row.getCell(15).value = otaFee
-      row.getCell(15).numFmt = '#,##0'
-      row.getCell(15).border = thinBorder
+      const cell15 = row.getCell(15)
+      cell15.value = otaFee
+      cell15.numFmt = '#,##0'
+      cell15.border = thinBorder
       
       // ADR OTA手数料差し引き後（計算式）
-      row.getCell(16).value = { formula: `=IF(I${currentRow}=0,"",(L${currentRow}-O${currentRow})/I${currentRow})` }
-      row.getCell(16).numFmt = '#,##0'
-      row.getCell(16).border = thinBorder
+      const cell16 = row.getCell(16)
+      cell16.value = { formula: `IF(I${currentRow}=0,"",(L${currentRow}-O${currentRow})/I${currentRow})` }
+      cell16.numFmt = '#,##0'
+      cell16.border = thinBorder
       
       currentRow++
     })
